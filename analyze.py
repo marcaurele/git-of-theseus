@@ -15,21 +15,32 @@
 # limitations under the License.
 
 from __future__ import print_function
-import argparse, git, datetime, numpy, traceback, time, os, fnmatch, json, progressbar
+
+import argparse
+import datetime
+import fnmatch
+import json
+import os
+import traceback
+
+import git
+
+import progressbar
+
 
 parser = argparse.ArgumentParser(description='Analyze git repo')
-parser.add_argument('--cohortfm', default='%Y', help='A Python datetime format string such as "%%Y" for creating cohorts (default: %(default)s)')
-parser.add_argument('--interval', default=7*24*60*60, type=int, help='Min difference between commits to analyze (default: %(default)s)')
-parser.add_argument('--ignore', default=[], action='append', help='File patterns that should be ignored (can provide multiple, will each subtract independently)')
-parser.add_argument('--only', default=[], action='append', help='File patterns that have to match (can provide multiple, will all have to match)')
-parser.add_argument('--outdir', default='.', help='Output directory to store results (default: %(default)s)')
-parser.add_argument('--branch', default='master', help='Branch to track (default: %(default)s)')
+parser.add_argument('--cohortfm', default='%Y', help='A Python datetime format string such as "%%Y" for creating cohorts (default: %(default)s)')  # noqa
+parser.add_argument('--interval', default=7 * 24 * 60 * 60, type=int, help='Min difference between commits to analyze (default: %(default)s)')  # noqa
+parser.add_argument('--ignore', default=[], action='append', help='File patterns that should be ignored (can provide multiple, will each subtract independently)')  # noqa
+parser.add_argument('--only', default=[], action='append', help='File patterns that have to match (can provide multiple, will all have to match)')  # noqa
+parser.add_argument('--outdir', default='.', help='Output directory to store results (default: %(default)s)')  # noqa
+parser.add_argument('--branch', default='master', help='Branch to track (default: %(default)s)')  # noqa
 parser.add_argument('repos', nargs=1)
 args = parser.parse_args()
 
 repo = git.Repo(args.repos[0])
 commit2cohort = {}
-code_commits = [] # only stores a subset
+code_commits = []  # only stores a subset
 master_commits = []
 commit2timestamp = {}
 cohorts_set = set()
@@ -41,7 +52,8 @@ print('Listing all commits')
 bar = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
 for i, commit in enumerate(repo.iter_commits(args.branch)):
     bar.update(i)
-    cohort = datetime.datetime.utcfromtimestamp(commit.committed_date).strftime(args.cohortfm)
+    cohort = datetime.datetime.utcfromtimestamp(
+        commit.committed_date).strftime(args.cohortfm)
     commit2cohort[commit.hexsha] = cohort
     cohorts_set.add(cohort)
     if len(commit.parents) == 1:
@@ -60,13 +72,17 @@ while True:
     if last_date is None or commit.committed_date < last_date - args.interval:
         master_commits.append(commit)
         last_date = commit.committed_date
-    i, commit = i+1, commit.parents[0]
+    i, commit = i + 1, commit.parents[0]
+
 
 def get_entries(commit):
     return [entry for entry in commit.tree.traverse()
-            if entry.type == 'blob'
-            and all([fnmatch.fnmatch(entry.path, pattern) for pattern in args.only])
-            and not any([fnmatch.fnmatch(entry.path, pattern) for pattern in args.ignore])]
+            if (entry.type == 'blob' and
+                all([fnmatch.fnmatch(entry.path, pattern)
+                     for pattern in args.only]) and
+                not any([fnmatch.fnmatch(entry.path, pattern)
+                         for pattern in args.ignore]))]
+
 
 print('Counting total entries to analyze')
 entries_total = 0
@@ -79,6 +95,7 @@ for i, commit in enumerate(reversed(master_commits)):
         _, ext = os.path.splitext(entry.path)
         exts_set.add(ext)
     entries_total += n
+
 
 def get_file_histogram(commit, path):
     h = {}
@@ -95,6 +112,7 @@ def get_file_histogram(commit, path):
     except:
         traceback.print_exc()
     return h
+
 
 curves = {}
 ts = []
@@ -114,20 +132,22 @@ for commit in reversed(master_commits):
         if diff.b_blob:
             changed_files.add(diff.b_blob.path)
     last_commit = commit
-    
+
     histogram = {}
     entries = get_entries(commit)
     for entry in entries:
         bar.update(entries_processed)
         entries_processed += 1
         if entry.path in changed_files or entry.path not in file_histograms:
-            file_histograms[entry.path] = get_file_histogram(commit, entry.path)
+            file_histograms[entry.path] = get_file_histogram(commit,
+                                                             entry.path)
         for key, count in file_histograms[entry.path].items():
             histogram[key] = histogram.get(key, 0) + count
 
     for key, count in histogram.items():
         if key not in cohorts_set and key not in exts_set:
-            commit_history.setdefault(key, []).append((commit.committed_date, count))
+            commit_history.setdefault(key, []).append((commit.committed_date,
+                                                       count))
 
     for cohort in cohorts_set:
         curves.setdefault(cohort, []).append(histogram.get(cohort, 0))
