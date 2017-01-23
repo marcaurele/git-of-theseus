@@ -14,18 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys, seaborn, dateutil.parser, numpy, json, collections, math, scipy.optimize, argparse, os
+import argparse
+import collections
+import json
+import math
+import os
 
 import matplotlib
-matplotlib.use('Agg')
-
 from matplotlib import pyplot
 
+import numpy
+
+import scipy.optimize
+
+
+matplotlib.use('Agg')
+
 parser = argparse.ArgumentParser(description='Plot survival plot')
-parser.add_argument('--exp-fit', action='store_true', help='Plot exponential fit')
+parser.add_argument('--exp-fit', action='store_true', help='Plot exponential fit')  # noqa
 parser.add_argument('--display', action='store_true', help='Display plot')
-parser.add_argument('--outfile', default='survival_plot.png', help='Output file to store results (default: %(default)s)')
-parser.add_argument('--years', type=float, default=5, help='Number of years on x axis (default: %(default)s)')
+parser.add_argument('--outfile', default='survival_plot.png', help='Output file to store results (default: %(default)s)')  # noqa
+parser.add_argument('--years', type=float, default=5, help='Number of years on x axis (default: %(default)s)')  # noqa
 parser.add_argument('inputs', nargs='*')
 args = parser.parse_args()
 
@@ -45,7 +54,7 @@ for fn in args.inputs:
         total_n += orig_count
         last_count = orig_count
         for t, count in history[1:]:
-            deltas[t-t0] += (count-last_count, 0)
+            deltas[t - t0] += (count - last_count, 0)
             last_count = count
         deltas[history[-1][0] - t0] += (-last_count, -orig_count)
 
@@ -84,12 +93,17 @@ def fit(k):
     print(k, loss)
     return loss
 
+
 if args.exp_fit:
     print('fitting exponential function')
     k = scipy.optimize.fmin(fit, 0.5, maxiter=50)[0]
     ts = numpy.linspace(0, args.years, 1000)
     ys = [100. * math.exp(-k * t) for t in ts]
-    pyplot.plot(ts, ys, color='red', label='Exponential fit, half-life = %.2f years' % (math.log(2) / k))
+    pyplot.plot(
+        ts,
+        ys,
+        color='red',
+        label='Exponential fit, half-life = %.2f years' % (math.log(2) / k))
 
 pyplot.xlabel('Years')
 pyplot.ylabel('%')
