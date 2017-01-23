@@ -14,16 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys, seaborn, dateutil.parser, numpy, json, argparse
+
+import argparse
+import json
+
+import dateutil.parser
 
 import matplotlib
-matplotlib.use('Agg')
-
 from matplotlib import pyplot
+
+import numpy
+
+
+matplotlib.use('Agg')
 
 parser = argparse.ArgumentParser(description='Plot stack plot')
 parser.add_argument('--display', action='store_true', help='Display plot')
-parser.add_argument('--outfile', default='stack_plot.png', help='Output file to store results (default: %(default)s)')
+parser.add_argument('--outfile', default='stack_plot.png', help='Output file to store results (default: %(default)s)')  # noqa
 parser.add_argument('inputs')
 args = parser.parse_args()
 
@@ -31,8 +38,8 @@ data = json.load(open(args.inputs))
 y = numpy.array(data['y'])
 pyplot.figure(figsize=(13, 8))
 pyplot.stackplot([dateutil.parser.parse(t) for t in data['ts']],
-                  numpy.array(y),
-                  labels=data['labels'])
+                 numpy.array(y),
+                 labels=data['labels'])
 pyplot.legend(loc=2)
 pyplot.ylabel('Lines of code')
 pyplot.savefig(args.outfile)
