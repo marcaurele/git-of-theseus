@@ -21,12 +21,11 @@ import json
 import dateutil.parser
 
 import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot
 
 import numpy
 
-
-matplotlib.use('Agg')
 
 parser = argparse.ArgumentParser(description='Plot stack plot')
 parser.add_argument('--display', action='store_true', help='Display plot')

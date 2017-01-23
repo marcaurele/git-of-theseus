@@ -21,6 +21,7 @@ import math
 import os
 
 import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot
 
 import numpy
@@ -28,7 +29,6 @@ import numpy
 import scipy.optimize
 
 
-matplotlib.use('Agg')
 
 parser = argparse.ArgumentParser(description='Plot survival plot')
 parser.add_argument('--exp-fit', action='store_true', help='Plot exponential fit')  # noqa
